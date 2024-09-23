@@ -1,0 +1,113 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 600,
+  "height": 400,
+  "style": "view",
+  "data": [
+    {
+      "name": "source_1",
+      "url": "https://raw.githubusercontent.com/AryaanH/FIT3179-WEEK9-Homework/refs/heads/main/data/australian_tourism_data.csv",
+      "format": {"type": "csv", "delimiter": ","}
+    },
+    {
+      "name": "source_2",
+      "url": "https://raw.githubusercontent.com/AryaanH/FIT3179-WEEK9-Homework/refs/heads/main/js/ne_10m_admin_1_states_provinces.json",
+      "format": {"type": "topojson", "feature": "ne_110m_graticules_30"}
+    },
+    {
+      "name": "source_0",
+      "url": "https://raw.githubusercontent.com/AryaanH/FIT3179-WEEK9-Homework/refs/heads/main/js/ne_10m_admin_1_states_provinces.json",
+      "format": {
+        "type": "topojson",
+        "feature": "ne_10m_admin_1_states_provinces",
+        "parse": {}
+      },
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"properties\"] && datum[\"properties\"][\"name\"]",
+          "as": "properties.name"
+        },
+        {"type": "filter", "expr": "datum.properties.admin === 'Australia'"},
+        {
+          "type": "lookup",
+          "from": "source_1",
+          "key": "name",
+          "fields": ["properties.name"],
+          "values": ["trips", "expenditure"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"trips\"]) && isFinite(+datum[\"trips\"])"
+        }
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "name": "projection",
+      "translate": {"signal": "[width / 2, height / 2]"},
+      "type": "equirectangular",
+      "scale": 600,
+      "center": [135, -25]
+    }
+  ],
+  "marks": [
+    {
+      "name": "layer_0_marks",
+      "type": "shape",
+      "clip": true,
+      "style": ["geoshape"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "fill": {"scale": "color", "field": "trips"},
+          "tooltip": {
+            "signal": "{\"State\": isValid(datum[\"properties.name\"]) ? datum[\"properties.name\"] : \"\"+datum[\"properties.name\"], \"Visitors\": format(datum[\"trips\"], \"\")}"
+          },
+          "ariaRoleDescription": {"value": "geoshape"},
+          "description": {
+            "signal": "\"trips: \" + (format(datum[\"trips\"], \"\")) + \"; State: \" + (isValid(datum[\"properties.name\"]) ? datum[\"properties.name\"] : \"\"+datum[\"properties.name\"]) + \"; Visitors: \" + (format(datum[\"trips\"], \"\"))"
+          }
+        }
+      },
+      "transform": [{"type": "geoshape", "projection": "projection"}]
+    },
+    {
+      "name": "layer_1_marks",
+      "type": "shape",
+      "clip": true,
+      "style": ["geoshape"],
+      "from": {"data": "source_2"},
+      "encode": {
+        "update": {
+          "stroke": {"value": "#999"},
+          "strokeWidth": {"value": 0.5},
+          "fill": {"value": "#4c78a8"},
+          "ariaRoleDescription": {"value": "geoshape"}
+        }
+      },
+      "transform": [{"type": "geoshape", "projection": "projection"}]
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "linear",
+      "domain": [190000, 3664000],
+      "range": ["#deebf7", "#9ecae1", "#3182bd"],
+      "interpolate": "hcl",
+      "zero": false
+    }
+  ],
+  "legends": [
+    {
+      "title": "Total visitors",
+      "fill": "color",
+      "gradientLength": {"signal": "clamp(height, 64, 200)"}
+    }
+  ],
+  "config": {}
+}
